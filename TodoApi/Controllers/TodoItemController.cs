@@ -18,7 +18,7 @@ namespace TodoApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<TodoItem>> Get(long id, long idList)
+        public async Task<ActionResult<TodoItem>> GetTodoItem(long id, long idList)
         {
             var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
 
@@ -57,7 +57,7 @@ namespace TodoApi.Controllers
                 return Problem("Error saving in db.");
             }
 
-            return CreatedAtAction("", new { id = item.Id }, item);
+            return CreatedAtAction( "GetTodoItem", new { id = item.Id, idList = list.Id }, item);
         }
 
         // PUT api/<TodoItemController>/5
@@ -67,10 +67,21 @@ namespace TodoApi.Controllers
             if (id != item.Id)
                 return BadRequest();
 
-            if (await _context.TodoItems.FirstOrDefaultAsync(i => i.Id == id) == null)
+            var existingItem = _context.TodoItems.Local.FirstOrDefault(i => i.Id == item.Id);
+
+            if (existingItem != null)
+            {
+                _context.Entry(existingItem).State = EntityState.Detached; // Desasociar la entidad existente
+            }
+
+            var itemDb = await _context.TodoItems.FirstOrDefaultAsync(i => i.Id == id);
+
+            if (itemDb == null)
                 return NotFound();
 
-            _context.Entry(item).State = EntityState.Modified;
+            itemDb.Title = item.Title;
+            itemDb.Description = item.Description;
+            itemDb.Completed = item.Completed;
 
             try
             {
@@ -83,6 +94,7 @@ namespace TodoApi.Controllers
 
             return Ok();
         }
+
 
         // DELETE api/<TodoItemController>/5
         [HttpDelete("{id}")]

@@ -31,7 +31,7 @@ namespace TodoApi.Tests.Controllers
 
                 var controller = new TodoItemController(context);
 
-                var result = await controller.Get(1, 3);
+                var result = await controller.GetTodoItem(1, 3);
 
                 Assert.IsType<NotFound>(result);
             }
@@ -47,7 +47,7 @@ namespace TodoApi.Tests.Controllers
 
                 var controller = new TodoItemController(context);
 
-                var result = await controller.Get(3, 2);
+                var result = await controller.GetTodoItem(3, 2);
 
                 Assert.IsType<NotFound>(result);
             }
@@ -63,7 +63,7 @@ namespace TodoApi.Tests.Controllers
 
                 var controller = new TodoItemController(context);
 
-                var result = await controller.Get(1, 2);
+                var result = await controller.GetTodoItem(1, 2);
 
                 Assert.IsType<Ok>(result);
             }

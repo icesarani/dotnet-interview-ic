@@ -32,7 +32,7 @@ namespace TodoApi.Controllers
       if (_context.TodoList == null)
         return NotFound();
 
-      var todoList = await _context.TodoList.FindAsync(id);
+      var todoList = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == id);
 
       if (todoList == null)
         return NotFound();
