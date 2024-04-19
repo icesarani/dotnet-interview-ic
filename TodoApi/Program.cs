@@ -33,6 +33,22 @@ app.UseSwagger();
 app.UseSwaggerUI();
 #endregion
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<TodoContext>();
+
+    context.TodoList.Add(
+        new TodoApi.Models.TodoList { Id = 1, Name = "List1" }
+    );
+
+    context.TodoList.Add(
+        new TodoApi.Models.TodoList { Id = 2, Name = "List2", Items = new List<TodoItem>() { new TodoItem() { Id = 1, Title = "Item1", Description = "Desc", Completed = false } } }
+    );
+
+    context.SaveChanges();
+}
+
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
