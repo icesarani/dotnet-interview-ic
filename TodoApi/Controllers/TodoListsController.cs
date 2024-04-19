@@ -82,7 +82,7 @@ namespace TodoApi.Controllers
     [HttpPost]
     public async Task<ActionResult<TodoList>> PostTodoList(TodoList todoList)
     {
-      if (_context.TodoList == null)
+      if (_context.TodoList == null) 
       {
         return Problem("Entity set 'TodoContext.TodoList'  is null.");
       }

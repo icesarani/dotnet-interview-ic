@@ -12,29 +12,20 @@ namespace TodoApi.Controllers
     {
         private readonly TodoContext _context;
 
-        public TodoItemController(TodoContext context) { 
+        public TodoItemController(TodoContext context)
+        {
             _context = context;
         }
 
-        // GET: api/<TodoItemController>
-        //[HttpGet]
-        //public async Task<ActionResult<TodoList>> Get(long idList)
-        //{
-
-
-        //    return new string[] { "value1", "value2" };
-        //}
-
-        // GET api/<TodoItemController>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<TodoItem>> Get(long id, long idList)
         {
-            TodoList? list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
+            var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
 
             if (list == null)
                 return NotFound();
 
-            TodoItem? item = list.Items.FirstOrDefault(i => i.Id == id);
+            var item = list.Items?.FirstOrDefault(i => i.Id == id);
 
             if (item == null)
                 return NotFound();
@@ -49,18 +40,20 @@ namespace TodoApi.Controllers
             if (_context.TodoList == null)
                 return Problem("Entity set 'TodoContext.TodoList'  is null.");
 
-            TodoList? list = await _context.TodoList.FindAsync(idList);
+            var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
 
             if (list == null)
                 return NotFound();
 
-            list.Items.Add(item);
+            list.Items?.Add(item);
             _context.Update(list);
 
-            try {
+            try
+            {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException) {
+            catch (DbUpdateConcurrencyException)
+            {
                 return Problem("Error saving in db.");
             }
 
@@ -69,15 +62,57 @@ namespace TodoApi.Controllers
 
         // PUT api/<TodoItemController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<ActionResult> Put(long id, long idList, TodoItem item)
         {
+            if (id != item.Id)
+                return BadRequest();
 
+            if (await _context.TodoItems.FirstOrDefaultAsync(i => i.Id == id) == null)
+                return NotFound();
+
+            _context.Entry(item).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException e)
+            {
+                return StatusCode(500, $"Error updating the object: {e.Message}");
+            }
+
+            return Ok();
         }
 
         // DELETE api/<TodoItemController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<ActionResult> Delete(long id, long idList)
         {
+            var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
+
+            if (list == null)
+                return NotFound();
+
+            var item = list.Items?.FirstOrDefault(i => i.Id == id);
+
+            if (item == null)
+                return NotFound();
+
+            try
+            {
+                list.Items?.Remove(item);
+
+                _context.Update(list);
+
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException e)
+            {
+                return StatusCode(500, $"Error saving the change: {e.Message}");
+            }
+
+            return Ok();
         }
+
     }
 }
