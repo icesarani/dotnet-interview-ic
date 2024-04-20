@@ -26,8 +26,8 @@ namespace TodoApi.Controllers
             try{
                 item = await _todoItemRepository.Get(idList, id);
             }
-            catch (KeyNotFoundException ex) {
-                return Problem($"Error getting the item: {ex.Message}");
+            catch (KeyNotFoundException) {
+                return NotFound();
             }
 
             return Ok(item);
@@ -48,7 +48,7 @@ namespace TodoApi.Controllers
                 return NotFound();
             }
             catch (Exception) {
-                return Problem("Database error");
+                return StatusCode(500 ,"Database error");
             }
 
             return CreatedAtAction("GetTodoItem", new { id = item.Id, idList }, item);
@@ -88,7 +88,7 @@ namespace TodoApi.Controllers
             {
                 await _todoItemRepository.Delete(idList, id);
             }
-            catch (ArgumentNullException)
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }

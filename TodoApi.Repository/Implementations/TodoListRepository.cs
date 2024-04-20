@@ -4,7 +4,7 @@ using TodoApi.Repository.Interfaces;
 
 namespace TodoApi.Repository.Implementations
 {
-    public class TodoListRepository : ITodoListRepository
+    public class TodoListRepository : ITodoListRepository, IDisposable
     {
         private readonly TodoContext _context;
 
@@ -63,5 +63,9 @@ namespace TodoApi.Repository.Implementations
             await _context.SaveChangesAsync();
         }
 
+        public void Dispose()
+        {
+            _context.Dispose();
+        }
     }
 }
