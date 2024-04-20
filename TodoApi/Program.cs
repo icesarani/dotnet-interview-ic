@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
-using TodoApi.Models;
+using TodoApi.Repository.Implementations;
+using TodoApi.Repository.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,10 @@ builder.Services
     )
     .AddEndpointsApiExplorer()
     .AddControllers();
+
+
+builder.Services.AddTransient<ITodoItemRepository, TodoItemRepository>();
+builder.Services.AddTransient<ITodoListRepository, TodoListRepository>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();

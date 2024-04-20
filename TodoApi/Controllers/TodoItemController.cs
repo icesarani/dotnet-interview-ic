@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Models;
+using TodoApi.Repository.Interfaces;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -10,25 +11,24 @@ namespace TodoApi.Controllers
     [ApiController]
     public class TodoItemController : ControllerBase
     {
-        private readonly TodoContext _context;
+        private readonly ITodoItemRepository _todoItemRepository;
 
-        public TodoItemController(TodoContext context)
+        public TodoItemController(ITodoItemRepository repository)
         {
-            _context = context;
+            _todoItemRepository = repository;
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<TodoItem>> GetTodoItem(long id, long idList)
         {
-            var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
+            TodoItem? item;
 
-            if (list == null)
-                return NotFound();
-
-            var item = list.Items?.FirstOrDefault(i => i.Id == id);
-
-            if (item == null)
-                return NotFound();
+            try{
+                item = await _todoItemRepository.Get(idList, id);
+            }
+            catch (KeyNotFoundException ex) {
+                return Problem($"Error getting the item: {ex.Message}");
+            }
 
             return Ok(item);
         }
@@ -37,59 +37,43 @@ namespace TodoApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TodoItem>> Post([FromBody] TodoItem item, long idList)
         {
-            if (_context.TodoList == null)
-                return Problem("Entity set 'TodoContext.TodoList'  is null.");
-
-            var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
-
-            if (list == null)
-                return NotFound();
-
-            list.Items?.Add(item);
-            _context.Update(list);
+            long newId;
 
             try
             {
-                await _context.SaveChangesAsync();
+                newId = await _todoItemRepository.Create(idList, item);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (ArgumentNullException)
             {
-                return Problem("Error saving in db.");
+                return NotFound();
+            }
+            catch (Exception) {
+                return Problem("Database error");
             }
 
-            return CreatedAtAction( "GetTodoItem", new { id = item.Id, idList = list.Id }, item);
+            return CreatedAtAction("GetTodoItem", new { id = item.Id, idList }, item);
         }
 
         // PUT api/<TodoItemController>/5
         [HttpPut("{id}")]
-        public async Task<ActionResult> Put(long id, long idList, TodoItem item)
+        public async Task<ActionResult> Put(long id, TodoItem item)
         {
-            if (id != item.Id)
-                return BadRequest();
-
-            var existingItem = _context.TodoItems.Local.FirstOrDefault(i => i.Id == item.Id);
-
-            if (existingItem != null)
-            {
-                _context.Entry(existingItem).State = EntityState.Detached; // Desasociar la entidad existente
-            }
-
-            var itemDb = await _context.TodoItems.FirstOrDefaultAsync(i => i.Id == id);
-
-            if (itemDb == null)
-                return NotFound();
-
-            itemDb.Title = item.Title;
-            itemDb.Description = item.Description;
-            itemDb.Completed = item.Completed;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _todoItemRepository.Update(id, item);
+            }
+            catch (KeyNotFoundException)
+            {
+                return BadRequest();
             }
             catch (DbUpdateConcurrencyException e)
             {
                 return StatusCode(500, $"Error updating the object: {e.Message}");
+            }
+            catch (ArgumentNullException)
+            {
+                return NotFound();
             }
 
             return Ok();
@@ -100,25 +84,15 @@ namespace TodoApi.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(long id, long idList)
         {
-            var list = await _context.TodoList.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == idList);
-
-            if (list == null)
-                return NotFound();
-
-            var item = list.Items?.FirstOrDefault(i => i.Id == id);
-
-            if (item == null)
-                return NotFound();
-
             try
             {
-                list.Items?.Remove(item);
-
-                _context.Update(list);
-
-                await _context.SaveChangesAsync();
+                await _todoItemRepository.Delete(idList, id);
             }
-            catch (DbUpdateException e)
+            catch (ArgumentNullException)
+            {
+                return NotFound();
+            }
+            catch (Exception e)
             {
                 return StatusCode(500, $"Error saving the change: {e.Message}");
             }
