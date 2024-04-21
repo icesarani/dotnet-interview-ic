@@ -141,4 +141,21 @@ public class TodoItemsControllerTests
             Assert.IsType<OkResult>(result);
         }
     }
+
+    [Fact]
+    public async Task PutTodoItem_WhenTodoItemIdDoesntMatch_ReturnBadRequest() {
+
+        using (var context = new TodoContext(DatabaseContextOptions()))
+        using (var repository = new TodoItemRepository(context))
+        {
+            PopulateDatabaseContext(context);
+
+            var controller = new TodoItemController(repository);
+
+            var result = await controller.Put(1, new TodoItem() { Id = 2, Completed = false, Description = "asd", Title = "FakeTitle" });
+
+            Assert.IsType<BadRequestResult>(result);
+        }
+    }
+
 }
