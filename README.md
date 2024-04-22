@@ -12,6 +12,14 @@ To build the application:
 
 ## Run the API
 
+Before running the API, you need to connect the project to your database and build its structure.
+
+To do this:
+1. Navigate to TodoApi -> appsettings.json and find the ConnectionStrings -> TodoContext property. Set your connection string to your database there.
+2. Open the Package Manager Console and execute the following commands:
+   1. Add-Migration [migration_name] (Replace [migration_name] with the desired name for your migration.)
+   2. Update-Database
+
 To run the TodoApi in your local environment:
 
 `dotnet run --project TodoApi`
